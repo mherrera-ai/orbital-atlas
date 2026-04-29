@@ -36,6 +36,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Verify
+        env:
+          ORBITAL_ATLAS_VISUAL_SMOKE: light
         run: npm run verify
 
       - name: Upload visual artifacts

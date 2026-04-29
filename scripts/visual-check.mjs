@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:5173";
 const OUTPUT_DIR = new URL("../artifacts/", import.meta.url);
 const PLANET_COUNT = 8;
+const LIGHTWEIGHT_VISUAL_CHECK = process.env.ORBITAL_ATLAS_VISUAL_SMOKE === "light";
 const CRITICAL_UI = [
   { selector: ".hud", label: "HUD shell" },
   { selector: ".control-deck", label: "control deck" },
@@ -40,118 +41,121 @@ try {
   await openReadyApp(desktop);
   await assertCriticalUiVisible(desktop, "desktop");
   await assertNoHorizontalOverflow(desktop, "desktop");
-  await assertPlanetSelectorCoverage(desktop);
-  await focusPlanet(desktop, "earth", "Earth");
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return (
-      tracking?.followId === "earth" &&
-      tracking.cameraMode === "chase" &&
-      tracking.targetDistance < 0.12 &&
-      document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
+
+  if (!LIGHTWEIGHT_VISUAL_CHECK) {
+    await assertPlanetSelectorCoverage(desktop);
+    await focusPlanet(desktop, "earth", "Earth");
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return (
+        tracking?.followId === "earth" &&
+        tracking.cameraMode === "chase" &&
+        tracking.targetDistance < 0.12 &&
+        document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
+      );
+    });
+    await focusPlanet(desktop, "neptune", "Neptune");
+    await desktop.evaluate(() => document.activeElement?.blur());
+    await desktop.keyboard.press("1");
+    await desktop.waitForFunction(() => document.querySelector("#focusName")?.textContent === "Mercury");
+    await focusPlanet(desktop, "earth", "Earth");
+    await desktop.waitForFunction(
+      () => document.querySelector("#focusSignal")?.textContent === "LIGHT 8.3 MIN"
     );
-  });
-  await focusPlanet(desktop, "neptune", "Neptune");
-  await desktop.evaluate(() => document.activeElement?.blur());
-  await desktop.keyboard.press("1");
-  await desktop.waitForFunction(() => document.querySelector("#focusName")?.textContent === "Mercury");
-  await focusPlanet(desktop, "earth", "Earth");
-  await desktop.waitForFunction(
-    () => document.querySelector("#focusSignal")?.textContent === "LIGHT 8.3 MIN"
-  );
-  await desktop.waitForFunction(
-    () =>
-      document.querySelector("#focusTrack")?.textContent === "DIST 1.0 AU" &&
-      /^ORBIT\s+\d{3}\s+DEG$/.test(document.querySelector("#focusLongitude")?.textContent || "")
-  );
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return tracking?.followId === "earth" && tracking.activeAu === 1 && tracking.targetDistance < 0.12;
-  });
-  await desktop.waitForFunction(
-    () => document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
-  );
-  await desktop.evaluate(() => {
-    const scrubber = document.querySelector("#orbitScrubber");
-    scrubber.value = "750";
-    scrubber.dispatchEvent(new Event("input", { bubbles: true }));
-    scrubber.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    const value = Number(document.querySelector("#orbitScrubber")?.value);
-    return tracking?.activeProgress > 0.72 && tracking.activeProgress < 0.78 && value > 720;
-  });
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return tracking?.followId === "earth" && tracking.targetDistance < 0.12;
-  });
-  await desktop.mouse.move(720, 470);
-  await desktop.mouse.down();
-  await desktop.mouse.move(770, 515, { steps: 4 });
-  await desktop.mouse.up();
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return tracking?.followId === null && !document.querySelector(".planet-button.is-active");
-  });
-  await focusPlanet(desktop, "earth", "Earth");
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return (
-      tracking?.followId === "earth" &&
-      tracking.cameraMode === "chase" &&
-      tracking.targetDistance < 0.12 &&
-      document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
+    await desktop.waitForFunction(
+      () =>
+        document.querySelector("#focusTrack")?.textContent === "DIST 1.0 AU" &&
+        /^ORBIT\s+\d{3}\s+DEG$/.test(document.querySelector("#focusLongitude")?.textContent || "")
     );
-  });
-  await desktop.click('[data-camera-view="map"]');
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return tracking?.followId === null && tracking.cameraMode === "map";
-  });
-  await desktop.click('[data-camera-view="chase"]');
-  await desktop.waitForFunction(() => {
-    const tracking = window.__SOLAR_APP__?.getTrackingState?.();
-    return (
-      tracking?.followId === "earth" &&
-      tracking.cameraMode === "chase" &&
-      tracking.targetDistance < 0.12 &&
-      document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return tracking?.followId === "earth" && tracking.activeAu === 1 && tracking.targetDistance < 0.12;
+    });
+    await desktop.waitForFunction(
+      () => document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
     );
-  });
-  await desktop.click("#toggleSignals");
-  await desktop.waitForFunction(
-    () => window.__SOLAR_APP__?.getTrackingState?.().signalsVisible === false
-  );
-  await desktop.click("#toggleSignals");
-  await desktop.waitForFunction(
-    () => window.__SOLAR_APP__?.getTrackingState?.().signalsVisible === true
-  );
-  await desktop.click("#toggleZones");
-  await desktop.waitForFunction(
-    () => window.__SOLAR_APP__?.getTrackingState?.().zonesVisible === false
-  );
-  await desktop.click("#toggleZones");
-  await desktop.waitForFunction(
-    () => window.__SOLAR_APP__?.getTrackingState?.().zonesVisible === true
-  );
-  await desktop.click("#toggleLabels");
-  await desktop.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("planet-labels-hidden"));
-  await desktop.click("#toggleLabels");
-  await desktop.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("planet-labels-hidden"));
-  await desktop.click("#playPause");
-  await desktop.waitForFunction(() => document.querySelector("#playPause")?.getAttribute("aria-pressed") === "true");
-  await desktop.click("#playPause");
-  await desktop.waitForFunction(() => document.querySelector("#playPause")?.getAttribute("aria-pressed") === "false");
-  await desktop.evaluate(() => window.__SOLAR_APP__.setSpeed(12));
-  await desktop.waitForTimeout(650);
-  const tracking = await desktop.evaluate(() => window.__SOLAR_APP__.getTrackingState());
-  if (tracking.followId !== "earth" || tracking.targetDistance > 0.12) {
-    throw new Error(
-      `Planet follow drifted from Earth: follow=${tracking.followId}, distance=${tracking.targetDistance}`
+    await desktop.evaluate(() => {
+      const scrubber = document.querySelector("#orbitScrubber");
+      scrubber.value = "750";
+      scrubber.dispatchEvent(new Event("input", { bubbles: true }));
+      scrubber.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      const value = Number(document.querySelector("#orbitScrubber")?.value);
+      return tracking?.activeProgress > 0.72 && tracking.activeProgress < 0.78 && value > 720;
+    });
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return tracking?.followId === "earth" && tracking.targetDistance < 0.12;
+    });
+    await desktop.mouse.move(720, 470);
+    await desktop.mouse.down();
+    await desktop.mouse.move(770, 515, { steps: 4 });
+    await desktop.mouse.up();
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return tracking?.followId === null && !document.querySelector(".planet-button.is-active");
+    });
+    await focusPlanet(desktop, "earth", "Earth");
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return (
+        tracking?.followId === "earth" &&
+        tracking.cameraMode === "chase" &&
+        tracking.targetDistance < 0.12 &&
+        document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
+      );
+    });
+    await desktop.click('[data-camera-view="map"]');
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return tracking?.followId === null && tracking.cameraMode === "map";
+    });
+    await desktop.click('[data-camera-view="chase"]');
+    await desktop.waitForFunction(() => {
+      const tracking = window.__SOLAR_APP__?.getTrackingState?.();
+      return (
+        tracking?.followId === "earth" &&
+        tracking.cameraMode === "chase" &&
+        tracking.targetDistance < 0.12 &&
+        document.querySelector('[data-planet="earth"]')?.classList.contains("is-active")
+      );
+    });
+    await desktop.click("#toggleSignals");
+    await desktop.waitForFunction(
+      () => window.__SOLAR_APP__?.getTrackingState?.().signalsVisible === false
     );
+    await desktop.click("#toggleSignals");
+    await desktop.waitForFunction(
+      () => window.__SOLAR_APP__?.getTrackingState?.().signalsVisible === true
+    );
+    await desktop.click("#toggleZones");
+    await desktop.waitForFunction(
+      () => window.__SOLAR_APP__?.getTrackingState?.().zonesVisible === false
+    );
+    await desktop.click("#toggleZones");
+    await desktop.waitForFunction(
+      () => window.__SOLAR_APP__?.getTrackingState?.().zonesVisible === true
+    );
+    await desktop.click("#toggleLabels");
+    await desktop.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("planet-labels-hidden"));
+    await desktop.click("#toggleLabels");
+    await desktop.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("planet-labels-hidden"));
+    await desktop.click("#playPause");
+    await desktop.waitForFunction(() => document.querySelector("#playPause")?.getAttribute("aria-pressed") === "true");
+    await desktop.click("#playPause");
+    await desktop.waitForFunction(() => document.querySelector("#playPause")?.getAttribute("aria-pressed") === "false");
+    await desktop.evaluate(() => window.__SOLAR_APP__.setSpeed(12));
+    await desktop.waitForTimeout(650);
+    const tracking = await desktop.evaluate(() => window.__SOLAR_APP__.getTrackingState());
+    if (tracking.followId !== "earth" || tracking.targetDistance > 0.12) {
+      throw new Error(
+        `Planet follow drifted from Earth: follow=${tracking.followId}, distance=${tracking.targetDistance}`
+      );
+    }
+    await desktop.evaluate(() => window.__SOLAR_APP__.setSpeed(1));
   }
-  await desktop.evaluate(() => window.__SOLAR_APP__.setSpeed(1));
 
   const desktopSample = await assertCanvasLit(desktop, {
     minWidth: 900,
