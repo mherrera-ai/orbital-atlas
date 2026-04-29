@@ -1,0 +1,40 @@
+{
+  "name": "orbital-atlas",
+  "version": "1.0.0",
+  "description": "A cinematic, interactive 3D solar system built for a public portfolio.",
+  "private": false,
+  "license": "MIT",
+  "author": "Michael Herrera",
+  "type": "module",
+  "packageManager": "npm@10.9.3",
+  "keywords": [
+    "threejs",
+    "webgl",
+    "vite",
+    "portfolio",
+    "solar-system",
+    "interactive-visualization"
+  ],
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "preview:ci": "vite preview",
+    "public:audit": "node scripts/public-audit.mjs",
+    "visual:test": "node scripts/visual-check.mjs",
+    "test": "npm run verify",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "lucide": "0.468.0",
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "playwright": "1.59.1",
+    "vite": "6.4.2"
+  }
+}

@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+artifacts/
+coverage/
+playwright-report/
+test-results/
+.vite/
+
+# Local environment
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
