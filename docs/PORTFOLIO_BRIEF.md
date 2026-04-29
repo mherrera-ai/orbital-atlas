@@ -19,7 +19,7 @@ The most relevant implementation areas are:
 - `src/styles.css` for HUD composition, responsive behavior, reduced-motion handling, and touch layout.
 - `scripts/public-audit.mjs` for the repository hygiene check covering required public files, ignored local output, and high-confidence secret patterns.
 - `scripts/visual-check.mjs` for the browser-based smoke test covering rendering, focus transitions, toggles, scrubber behavior, and mobile overflow.
-- `.github/workflows/ci.yml` for automated build and visual verification on pull requests and `main`.
+- `.github/workflows/ci.yml` for automated public-readiness auditing and production builds on pull requests and `main`.
 - `.github/workflows/deploy-pages.yml` for GitHub Pages deployment after a successful `CI` run on `main`.
 
 ## Quality Bar
